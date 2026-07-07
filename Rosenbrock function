@@ -1,0 +1,79 @@
+#rosenbrock function f(x,y) = (1-x)^2 + 100*(y-x^2)^2
+
+#global minima at 1,1 
+
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+from mpl_toolkits.mplot3d import Axes3D
+import time
+from scipy.optimize import minimize
+from cma import CMAEvolutionStrategy
+import warnings
+
+warnings.filterwarnings('ignore')
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"using device: {device}")
+
+
+def rosenbrock_numpy(x):
+    return (1-x[0])**2+ 100*(x[1]-x[0]**2)**2
+
+def rosenbrock_torch(x):
+    return (1-x[0])**2+ 100*(x[1]-x[0]**2)**2
+
+def rosenbrock_plotting(x,y):
+    return (1-x)**2 + 100 *(y- x**2)**2
+
+def rosenbrock_analytical(x,y):
+    #f = (1-x)^2 + 100*(y-x^2)^2
+    #df/ax =  -2(1-x) + 100*2*(y-x2)*2x
+    #df/dy = 2*100(y-x2)*1
+    dfdx = -2*(1-x)-4*100*x*(y-x**2)
+    dfdy= 2*100*(y-x**2)
+    return dfdx, dfdy
+
+# ====================================================== #
+# Section 2 : Visulize                                   #
+# ====================================================== #
+
+print("=" * 60)
+print ("Rosenbrock function optimization")
+print("=" * 60)
+
+x_range = np.linspace(-2,2,100)
+y_range = np.linspace(-1,3,100)
+X, Y = np.meshgrid(x_range, y_range)
+Z= rosenbrock_plotting(X, Y)
+
+fig = plt.figure(figsize=(12,8))
+ax= fig.add_subplot(111, projection = '3d')
+surface = ax.plot_surface(X,Y,Z, cmap='viridis', alpha=0.7)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('f(x,y)')
+ax.set_title('Rosenbrock function')
+ax.view_init(elev=30, azim =40)
+fig.colorbar(surface, shrink=0.5, label='f(x,y)')
+plt.show
+
+
+# ======================================================= #
+# Section 3: Gradient free optimization CMA-ES            #
+# ======================================================= #
+
+x0 = np.zeros(2)
+def objective_fun(x):
+    return rosenbrock_numpy(x)
+
+start_time = time.time()
+es= CMAEvolutionStrategy(x0, 0.5, {'bounds':[[-2,-2],[2,2]],'verbose':-1})
+es.optimize(objective_fun, maxfun=10000)
+cmas_time = time.time()- start_time
+
+results_cmaes = es.result
+print(f"Evaluration functions:{results_cmaes.evaluations}")
+print(f"Time:{cmas_time}")
+print(f"Solution:x={results_cmaes.xbest[0]}, y={results_cmaes.xbest[1]}")
+print(f"Min value:{results_cmaes.fbest}")

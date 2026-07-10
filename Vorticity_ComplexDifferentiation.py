@@ -102,3 +102,35 @@ plt.title('Vorticity')
 plt.axis('equal')
 plt.tight_layout()
 plt.show
+
+#Compare Complex and finite difference
+
+test_x, test_y = 0.05, 0.05
+
+for eps in [1e-6, 1e-10, 1e-20, 1e-30, 1e-50, 1e-100]:
+    vort = vorticity_complex_step(np.array([test_x]), np.array([test_y]), gamma, x0, y0, R, epsilon=eps)[0]
+    print(f"{eps:<15.0e} {vort:.10f}")
+
+for h in [1e-2, 1e-4, 1e-6, 1e-8, 1e-10, 1e-12]:
+    vort = vorticity_finite_difference(np.array([test_x]), np.array([test_y]), gamma, x0, y0, R, h=h)[0]
+    print(f"{h:<15.0e} {vort:.10f}")
+
+
+## Vorticity analytical ###
+
+def vorticity_analytical(x,y,gamma, x0,y0,R):
+    dx= x-x0
+    dy=y-y0
+    r_sq =dx**2 +dy**2
+    R_sq = R**2
+
+    term1 = gamma / (2*np.pi*R_sq)
+    term2 = 2 -(r_sq**2 / R_sq)
+    term3 = np.exp(1 -(r_sq**2 / R_sq) / 2)
+
+    vorticity_ana = term1*term2*term3
+    return vorticity_ana
+
+vorticity_analytical = vorticity_analytical(X,Y, gamma, x0, y0, R)
+error = np.abs(vorticity_cs - vorticity_analytical)
+print(f"error:{np.max(error):.2e}")
